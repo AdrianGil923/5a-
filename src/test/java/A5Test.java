@@ -13,85 +13,150 @@ class A5Test {
     @TempDir Path temp;
 
     @Test
-    void pdfExamples() {
-        SimpsonIntegration integration = new SimpsonIntegration();
-        assertEquals(0.35006, integration.integrate(0, 1.1, 9), 0.0000051);
-        assertEquals(0.36757, integration.integrate(0, 1.1812, 10), 0.0000051);
-        assertEquals(0.49500, integration.integrate(0, 2.750, 30), 0.0000051);
+    void pdfExampleDof9() {
+        assertEquals(0.35006, new SimpsonIntegration().integrate(0, 1.1, 9), 0.0000051);
     }
 
     @Test
-    void gammaForIntegersAndDecimals() {
+    void pdfExampleDof10() {
+        assertEquals(0.36757, new SimpsonIntegration().integrate(0, 1.1812, 10), 0.0000051);
+    }
+
+    @Test
+    void pdfExampleDof30() {
+        assertEquals(0.49500, new SimpsonIntegration().integrate(0, 2.750, 30), 0.0000051);
+    }
+
+    @Test
+    void gammaIntegerOne() {
+        assertEquals(1.0, new GammaFunction().computeIntGamma(1), 1.0e-12);
+    }
+
+    @Test
+    void gammaIntegerFive() {
+        assertEquals(24.0, new GammaFunction().computeIntGamma(5), 1.0e-10);
+    }
+
+    @Test
+    void gammaHalf() {
+        assertEquals(Math.sqrt(Math.PI), new GammaFunction().computeDblGamma(0.5), 1.0e-12);
+    }
+
+    @Test
+    void gammaReflectionForQuarters() {
         GammaFunction gamma = new GammaFunction();
-        assertEquals(1.0, gamma.computeIntGamma(1), 1.0e-12);
-        assertEquals(24.0, gamma.computeIntGamma(5), 1.0e-10);
-        assertEquals(Math.sqrt(Math.PI), gamma.computeDblGamma(0.5), 1.0e-12);
         assertEquals(Math.PI / Math.sin(Math.PI * 0.25), gamma.computeDblGamma(0.25) * gamma.computeDblGamma(0.75), 1.0e-12);
-        assertEquals(1.0, gamma.computeDblGamma(1.0), 1.0e-12);
-        assertEquals(2.0, gamma.computeDblGamma(0.5) / gamma.computeDblGamma(1.0), 0.9);
     }
 
     @Test
-    void gammaRejectsInvalidValues() {
-        GammaFunction gamma = new GammaFunction();
-        assertThrows(IllegalArgumentException.class, () -> gamma.computeIntGamma(0));
-        assertThrows(IllegalArgumentException.class, () -> gamma.computeDblGamma(-1));
-        assertThrows(IllegalArgumentException.class, () -> gamma.computeDblGamma(Double.NaN));
+    void gammaOne() {
+        assertEquals(1.0, new GammaFunction().computeDblGamma(1.0), 1.0e-12);
     }
 
     @Test
-    void integrationSupportsNonzeroAndReversedLimits() {
+    void gammaRejectsIntegerZero() {
+        assertThrows(IllegalArgumentException.class, () -> new GammaFunction().computeIntGamma(0));
+    }
+
+    @Test
+    void gammaRejectsNegativeValue() {
+        assertThrows(IllegalArgumentException.class, () -> new GammaFunction().computeDblGamma(-1));
+    }
+
+    @Test
+    void gammaRejectsNan() {
+        assertThrows(IllegalArgumentException.class, () -> new GammaFunction().computeDblGamma(Double.NaN));
+    }
+
+    @Test
+    void integrationSupportsNonzeroInitialValue() {
+        assertEquals(0.35006 - 0.146, new SimpsonIntegration().integrate(0.4, 1.1, 9), 0.01);
+    }
+
+    @Test
+    void integrationSupportsReversedLimits() {
         SimpsonIntegration integration = new SimpsonIntegration();
-        assertEquals(0.35006 - 0.146, integration.integrate(0.4, 1.1, 9), 0.01);
         assertEquals(-integration.integrate(0.3, 1.2, 12), integration.integrate(1.2, 0.3, 12), 1.0e-12);
-        assertEquals(0.0, integration.integrate(2, 2, 7), 0.0);
-        assertEquals(Math.atan(3.0) / Math.PI, integration.integrate(0, 3.0, 1), 0.00001);
     }
 
     @Test
-    void integrationRejectsInvalidInputsAndDependencies() {
-        SimpsonIntegration integration = new SimpsonIntegration();
-        assertThrows(IllegalArgumentException.class, () -> integration.integrate(Double.NaN, 1, 3));
-        assertThrows(IllegalArgumentException.class, () -> integration.integrate(0, Double.POSITIVE_INFINITY, 3));
-        assertThrows(IllegalArgumentException.class, () -> integration.integrate(0, 1, 0));
+    void integrationSupportsEqualLimits() {
+        assertEquals(0.0, new SimpsonIntegration().integrate(2, 2, 7), 0.0);
+    }
+
+    @Test
+    void integrationRefinesForWideInterval() {
+        assertEquals(Math.atan(3.0) / Math.PI, new SimpsonIntegration().integrate(0, 3.0, 1), 0.00001);
+    }
+
+    @Test
+    void integrationRejectsNanInitialValue() {
+        assertThrows(IllegalArgumentException.class, () -> new SimpsonIntegration().integrate(Double.NaN, 1, 3));
+    }
+
+    @Test
+    void integrationRejectsInfiniteEndValue() {
+        assertThrows(IllegalArgumentException.class, () -> new SimpsonIntegration().integrate(0, Double.POSITIVE_INFINITY, 3));
+    }
+
+    @Test
+    void integrationRejectsZeroDof() {
+        assertThrows(IllegalArgumentException.class, () -> new SimpsonIntegration().integrate(0, 1, 0));
+    }
+
+    @Test
+    void simpsonIntegrationRejectsNullGamma() {
         assertThrows(IllegalArgumentException.class, () -> new SimpsonIntegration(null));
+    }
+
+    @Test
+    void logicRejectsNullIntegration() {
         assertThrows(IllegalArgumentException.class, () -> new Logic(null, new Output()));
+    }
+
+    @Test
+    void logicRejectsNullOutput() {
         assertThrows(IllegalArgumentException.class, () -> new Logic(new SimpsonIntegration(), null));
     }
 
     @Test
-    void outputHasOnlyFiveDecimalPlacesAndCreatesDirectories() throws Exception {
-        Output output = new Output();
-        assertEquals("0.35006", output.format(0.350056));
+    void outputFormatsFiveDecimals() {
+        assertEquals("0.35006", new Output().format(0.350056));
+    }
+
+    @Test
+    void outputWritesNumericResultAndCreatesDirectories() throws Exception {
         Path file = temp.resolve("nested/output5.txt");
-        output.writeData(file.toString(), output.format(0.350056));
+        new Output().writeData(file.toString(), new Output().format(0.350056));
         assertEquals("0.35006" + System.lineSeparator(), Files.readString(file));
     }
 
     @Test
-    void appReadsThreeInputsPrintsAndWritesResult() throws Exception {
-        Path file = temp.resolve("app/output5.txt");
+    void appPrintsThreePromptsAndResult() throws Exception {
+        new App();
+        Path file = temp.resolve("prompts/output5.txt");
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         App.run(new Scanner("0\n1.1\n9\n").useLocale(Locale.ROOT), new PrintStream(bytes), new Logic(), file.toString());
-        String printed = bytes.toString();
-        assertTrue(printed.contains("Valor inicial:"));
-        assertTrue(printed.contains("Valor final:"));
-        assertTrue(printed.contains("DOF:"));
-        assertTrue(printed.contains("0.35006"));
+        assertEquals("Valor inicial:" + System.lineSeparator() + "Valor final:" + System.lineSeparator() + "DOF:" + System.lineSeparator() + "Resultado: 0.35006" + System.lineSeparator(), bytes.toString());
+    }
+
+    @Test
+    void appWritesNumericResult() throws Exception {
+        Path file = temp.resolve("result/output5.txt");
+        App.run(new Scanner("0 1.1 9").useLocale(Locale.ROOT), new PrintStream(new ByteArrayOutputStream()), new Logic(), file.toString());
         assertEquals("0.35006" + System.lineSeparator(), Files.readString(file));
     }
 
     @Test
-    void mainReadsFromStandardInput() {
+    void mainReadsStandardInputWithDotDecimalLocale() {
         var originalIn = System.in;
         var originalOut = System.out;
         var originalLocale = Locale.getDefault();
         try {
-            new App();
             Locale.setDefault(Locale.GERMANY);
             System.setIn(new java.io.ByteArrayInputStream("0 1.1 9".getBytes()));
             System.setOut(new PrintStream(new ByteArrayOutputStream()));
-            App.main(new String[0]);
+            assertDoesNotThrow(() -> App.main(new String[0]));
         } finally {
             System.setIn(originalIn);
             System.setOut(originalOut);
@@ -100,11 +165,27 @@ class A5Test {
     }
 
     @Test
-    void appRejectsInvalidInputsAndHandlesWriteFailure() throws Exception {
+    void appRejectsNonNumericInitialValue() {
         assertThrows(IllegalArgumentException.class, () -> App.run(new Scanner("x"), new PrintStream(new ByteArrayOutputStream()), new Logic()));
+    }
+
+    @Test
+    void appRejectsNonFiniteInitialValue() {
         assertThrows(IllegalArgumentException.class, () -> App.run(new Scanner("NaN 1 9"), new PrintStream(new ByteArrayOutputStream()), new Logic()));
+    }
+
+    @Test
+    void appRejectsNonIntegerDof() {
         assertThrows(IllegalArgumentException.class, () -> App.run(new Scanner("0 1 x"), new PrintStream(new ByteArrayOutputStream()), new Logic()));
+    }
+
+    @Test
+    void appRejectsNonPositiveDof() {
         assertThrows(IllegalArgumentException.class, () -> App.run(new Scanner("0 1 0"), new PrintStream(new ByteArrayOutputStream()), new Logic()));
+    }
+
+    @Test
+    void appReportsOutputWriteFailure() throws Exception {
         Path blocker = temp.resolve("blocker");
         Files.writeString(blocker, "file");
         assertThrows(IllegalStateException.class, () -> App.run(new Scanner("0 1 9"), new PrintStream(new ByteArrayOutputStream()), new Logic(), blocker.resolve("out.txt").toString()));
