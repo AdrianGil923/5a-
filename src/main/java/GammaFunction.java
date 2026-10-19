@@ -21,3 +21,4 @@ public class GammaFunction {
         return Math.sqrt(2.0 * Math.PI) * Math.pow(base, shifted + 0.5) * Math.exp(-base) * sum;
     }
 }
+//
