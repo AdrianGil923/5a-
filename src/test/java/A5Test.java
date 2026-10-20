@@ -14,7 +14,7 @@ class A5Test {
 
     @Test
     void pdfExampleDof9() {
-        assertEquals(0.36006, new SimpsonIntegration().integrate(0, 1.1, 9), 0.0000051);
+        assertEquals(0.35006, new SimpsonIntegration().integrate(0, 1.1, 9), 0.0000051);
     }
 
     @Test
